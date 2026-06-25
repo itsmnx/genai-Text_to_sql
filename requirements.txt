@@ -1,0 +1,10 @@
+flask
+flask-cors
+flask-jwt-extended
+python-dotenv
+groq
+sqlparse
+pandas
+werkzeug
+scikit-learn
+joblib

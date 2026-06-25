@@ -1,0 +1,74 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+database/*.db
+
+# Logs
+logs/
+*.log
+
+# Environment Variables
+.env
+.env.local
+
+# ML Models
+models/*.pkl
+models/*.joblib
+models/embeddings/*
+!models/embeddings/.gitkeep
+
+# Data Files
+data/*.csv
+!data/.gitkeep
+data/schema_discovery.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Deployment
+*.egg-info/
+dist/
+build/
+
+# OS Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Project Specific
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.old
+.ipynb_checkpoints/
+*.ipynb

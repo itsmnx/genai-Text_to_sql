@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genial Query - AI Query Optimizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-database"></i>
+                    <span>GenialQuery</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h4>Menu</h4>
+                    <ul>
+                        <li class="active">
+                            <a href="#" data-page="dashboard">
+                                <i class="fas fa-home"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-page="history">
+                                <i class="fas fa-history"></i>
+                                <span>History</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-page="saved">
+                                <i class="fas fa-bookmark"></i>
+                                <span>Saved Queries</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-page="optimize">
+                                <i class="fas fa-magic"></i>
+                                <span>Optimize</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h4>Agents</h4>
+                    <ul>
+                        <li>
+                            <a href="#" data-agent="query">
+                                <i class="fas fa-code"></i>
+                                <span>Query Agent</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-agent="explanation">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Explanation Agent</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-agent="impact">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Impact Agent</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-agent="optimizer">
+                                <i class="fas fa-rocket"></i>
+                                <span>Optimizer Agent</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-agent="schema">
+                                <i class="fas fa-sitemap"></i>
+                                <span>Schema Agent</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" data-agent="security">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Security Agent</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-footer">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                        <span id="themeText">Dark Mode</span>
+                    </button>
+                    {% if not session.get('user_id') %}
+                    <div class="guest-banner">
+                        <i class="fas fa-user-astronaut"></i>
+                        <span>Guest Mode</span>
+                        <small>Sign up to save queries</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="pageTitle">Dashboard</h1>
+                    <span class="badge" id="agentStatus">🟢 All Agents Active</span>
+                </div>
+                <div class="header-right">
+                    <button class="icon-btn" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-dot"></span>
+                    </button>
+                    
+                    {% if session.get('user_id') %}
+                    <!-- Logged in user profile -->
+                    <div class="profile-dropdown">
+                        <button class="profile-btn" id="profileBtn">
+                            <img src="https://ui-avatars.com/api/?name={{ session.get('username', 'User') }}&background=6C63FF&color=fff&size=32" alt="Profile">
+                            <span class="profile-name">{{ session.get('username', 'User') }}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="#"><i class="fas fa-user"></i> Profile</a>
+                            <a href="#"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="#"><i class="fas fa-key"></i> API Keys</a>
+                            <hr>
+                            <a href="{{ url_for('pages.logout') }}" class="logout-btn">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- Guest user actions -->
+                    <div class="auth-buttons">
+                        <a href="{{ url_for('pages.login_page') }}" class="btn-outline">Login</a>
+                        <a href="{{ url_for('pages.register_page') }}" class="btn-primary">Sign Up Free</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Chat Interface -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Welcome Message -->
+                    <div class="message ai-message">
+                        <div class="message-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">GenialQuery AI</span>
+                                <span class="message-time">Just now</span>
+                            </div>
+                            <div class="message-text">
+                                <p>👋 Welcome to GenialQuery! I'm your AI assistant for query optimization.</p>
+                                <p>Describe your data needs in natural language, and I'll generate optimized SQL queries with explanations.</p>
+                                <p><strong>Example:</strong> "Show me all customers who made purchases over $100 in the last month"</p>
+                                {% if not session.get('user_id') %}
+                                <div class="guest-note">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>You're using GenialQuery as a guest. <a href="{{ url_for('pages.register_page') }}">Sign up</a> to save your queries and access history!</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-area">
+                    <div class="input-container">
+                        <textarea 
+                            id="queryInput" 
+                            placeholder="Describe what you want to query... (e.g., Show me all customers who bought products in the last 30 days)"
+                            rows="1"
+                        ></textarea>
+                        <div class="input-actions">
+                            <button class="action-btn" id="attachBtn" title="Attach file">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <button class="action-btn" id="clearBtn" title="Clear chat">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            <button class="send-btn" id="sendBtn" title="Send message">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-footer">
+                        <span class="info-text">
+                            <i class="fas fa-info-circle"></i>
+                            Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to send
+                        </span>
+                        <span class="model-status">
+                            <i class="fas fa-circle" style="color: #10b981; font-size: 8px;"></i>
+                            Model: Optimized Query Generator
+                            {% if not session.get('user_id') %}
+                            <span class="guest-badge">Guest</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
