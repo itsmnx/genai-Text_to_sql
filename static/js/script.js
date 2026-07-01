@@ -1,8 +1,18 @@
-// static/js/script.js - Complete Updated Version
+// static/js/script.js - Complete Auth Management
 document.addEventListener('DOMContentLoaded', function() {
+    // ============================================
+    // AUTH STATE
+    // ============================================
+    let isAuthenticated = false;
+    let currentUser = null;
+    let accessToken = localStorage.getItem('access_token');
+
+    // ============================================
     // DOM Elements
+    // ============================================
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const themeText = document.getElementById('themeText');
@@ -10,66 +20,301 @@ document.addEventListener('DOMContentLoaded', function() {
     const queryInput = document.getElementById('queryInput');
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const profileBtn = document.getElementById('profileBtn');
-    const dropdownMenu = document.getElementById('dropdownMenu');
+    const authSection = document.getElementById('authSection');
+    const sidebarProfile = document.getElementById('sidebarProfile');
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const guestBadge = document.getElementById('guestBadge');
+    const guestNote = document.getElementById('guestNote');
 
-    // Check if user is logged in
-    const isLoggedIn = !!document.querySelector('.profile-dropdown');
+    // ============================================
+    // AUTH FUNCTIONS
+    // ============================================
 
-    // Sidebar Toggle
-    sidebarToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        sidebar.classList.toggle('collapsed');
-        const icon = this.querySelector('i');
-        if (sidebar.classList.contains('collapsed')) {
-            icon.className = 'fas fa-chevron-right';
+    function checkAuth() {
+        const token = localStorage.getItem('access_token');
+        const username = localStorage.getItem('username');
+        
+        if (token && username) {
+            // Verify token with /api/me
+            fetch('/api/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    isAuthenticated = true;
+                    currentUser = data.user;
+                    updateUIForAuthenticatedUser();
+                } else {
+                    // Token invalid
+                    logoutUser();
+                }
+            })
+            .catch(() => {
+                logoutUser();
+            });
         } else {
-            icon.className = 'fas fa-bars';
+            isAuthenticated = false;
+            currentUser = null;
+            updateUIForGuest();
+        }
+    }
+
+    function logoutUser() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('user_email');
+        isAuthenticated = false;
+        currentUser = null;
+        updateUIForGuest();
+        // Optionally redirect to login
+        // window.location.href = '/login';
+    }
+
+    function updateUIForAuthenticatedUser() {
+        const username = currentUser?.username || 'User';
+        const email = currentUser?.email || '';
+        
+        // Update header
+        if (authSection) {
+            authSection.innerHTML = `
+                <div class="profile-dropdown">
+                    <button class="profile-btn" id="profileBtn">
+                        <img src="https://ui-avatars.com/api/?name=${username}&background=6C63FF&color=fff&size=32" alt="Profile">
+                        <span class="profile-name">${username}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <a href="#" onclick="openProfileModal()"><i class="fas fa-user"></i> Profile</a>
+                        <a href="#"><i class="fas fa-cog"></i> Settings</a>
+                        <a href="#"><i class="fas fa-key"></i> API Keys</a>
+                        <hr>
+                        <a href="#" onclick="logoutUser()" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            // Add profile dropdown event
+            const profileBtn = document.getElementById('profileBtn');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            if (profileBtn && dropdownMenu) {
+                profileBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('show');
+                });
+                document.addEventListener('click', function() {
+                    dropdownMenu.classList.remove('show');
+                });
+            }
+        }
+        
+        // Update sidebar
+        if (sidebarProfile) {
+            sidebarProfile.innerHTML = `
+                <div class="user-profile-sidebar">
+                    <div class="profile-card">
+                        <img src="https://ui-avatars.com/api/?name=${username}&background=6C63FF&color=fff&size=40" alt="Profile">
+                        <div class="profile-info">
+                            <strong>${username}</strong>
+                            <small>${email || 'user@example.com'}</small>
+                        </div>
+                        <button class="profile-edit-btn" onclick="openProfileModal()" title="Edit Profile">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update welcome message
+        if (welcomeMessage) {
+            welcomeMessage.innerHTML = `
+                <p>👋 Welcome back, <strong>${username}</strong>! I'm your AI assistant for query optimization.</p>
+                <p>Describe your data needs in natural language, and I'll generate optimized SQL queries with explanations.</p>
+                <p><strong>Example:</strong> "Show me all customers who made purchases over $100 in the last month"</p>
+            `;
+        }
+        
+        // Hide guest elements
+        if (guestBadge) guestBadge.style.display = 'none';
+        if (guestNote) guestNote.style.display = 'none';
+    }
+
+    function updateUIForGuest() {
+        // Update header with login/signup buttons
+        if (authSection) {
+            authSection.innerHTML = `
+                <div class="auth-buttons">
+                    <a href="/login" class="btn-outline">Login</a>
+                    <a href="/register" class="btn-primary">Sign Up Free</a>
+                </div>
+            `;
+        }
+        
+        // Update sidebar with guest banner
+        if (sidebarProfile) {
+            sidebarProfile.innerHTML = `
+                <div class="guest-banner">
+                    <i class="fas fa-user-astronaut"></i>
+                    <span>Guest Mode</span>
+                    <small>Sign up to save queries</small>
+                    <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+                        <a href="/login" class="guest-btn guest-btn-outline">Login</a>
+                        <a href="/register" class="guest-btn guest-btn-primary">Sign Up</a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update welcome message
+        if (welcomeMessage) {
+            welcomeMessage.innerHTML = `
+                <p>👋 Welcome to GenialQuery! I'm your AI assistant for query optimization.</p>
+                <p>Describe your data needs in natural language, and I'll generate optimized SQL queries with explanations.</p>
+                <p><strong>Example:</strong> "Show me all customers who made purchases over $100 in the last month"</p>
+                <div class="guest-note">
+                    <i class="fas fa-info-circle"></i>
+                    <span>You're using GenialQuery as a guest. <a href="/register">Sign up</a> to save your queries and access history!</span>
+                </div>
+            `;
+        }
+        
+        // Show guest badge
+        if (guestBadge) guestBadge.style.display = 'inline';
+        if (guestNote) guestNote.style.display = 'block';
+    }
+
+    // ============================================
+    // PROFILE MODAL FUNCTIONS
+    // ============================================
+
+    window.openProfileModal = function() {
+        const modal = document.getElementById('profileModal');
+        if (currentUser) {
+            document.getElementById('modalUsername').value = currentUser.username || '';
+            document.getElementById('modalEmail').value = currentUser.email || '';
+        }
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeProfileModal = function() {
+        const modal = document.getElementById('profileModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    };
+
+    // Profile form submission
+    const profileForm = document.getElementById('profileForm');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Profile updated successfully!');
+            closeProfileModal();
+        });
+    }
+
+    // Close modal on overlay click
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('profileModal');
+        if (modal && e.target === modal) {
+            closeProfileModal();
         }
     });
 
-    // Theme Management
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeProfileModal();
+        }
+    });
+
+    // ============================================
+    // SIDEBAR TOGGLE
+    // ============================================
+
+    if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('open');
+            const icon = this.querySelector('i');
+            if (sidebar.classList.contains('open')) {
+                icon.className = 'fas fa-times';
+            } else {
+                icon.className = 'fas fa-bars';
+            }
+        });
+    }
+
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('collapsed');
+            const icon = this.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.className = 'fas fa-chevron-right';
+            } else {
+                icon.className = 'fas fa-bars';
+            }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768) {
+            const isClickOnSidebar = sidebar.contains(e.target);
+            const isClickOnHamburger = hamburgerBtn && hamburgerBtn.contains(e.target);
+            
+            if (!isClickOnSidebar && !isClickOnHamburger) {
+                sidebar.classList.remove('open');
+                if (hamburgerBtn) {
+                    const icon = hamburgerBtn.querySelector('i');
+                    if (icon) icon.className = 'fas fa-bars';
+                }
+            }
+        }
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove('open');
+            if (hamburgerBtn) {
+                const icon = hamburgerBtn.querySelector('i');
+                if (icon) icon.className = 'fas fa-bars';
+            }
+        }
+    });
+
+    // ============================================
+    // THEME MANAGEMENT
+    // ============================================
+    
     let isDarkMode = localStorage.getItem('theme') === 'dark';
 
     function setTheme(dark) {
         isDarkMode = dark;
         document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-        themeIcon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
-        themeText.textContent = dark ? 'Light Mode' : 'Dark Mode';
+        if (themeIcon) themeIcon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
+        if (themeText) themeText.textContent = dark ? 'Light Mode' : 'Dark Mode';
         localStorage.setItem('theme', dark ? 'dark' : 'light');
     }
 
     setTheme(isDarkMode);
 
-    themeToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        setTheme(!isDarkMode);
-    });
-
-    // Close sidebar on outside click (mobile)
-    document.addEventListener('click', function(e) {
-        if (window.innerWidth <= 768) {
-            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        }
-    });
-
-    // Profile Dropdown
-    if (profileBtn) {
-        profileBtn.addEventListener('click', function(e) {
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function(e) {
             e.stopPropagation();
-            dropdownMenu.classList.toggle('show');
-        });
-
-        document.addEventListener('click', function() {
-            if (dropdownMenu) {
-                dropdownMenu.classList.remove('show');
-            }
+            setTheme(!isDarkMode);
         });
     }
 
-    // Agent click handlers
+    // ============================================
+    // AGENT & PAGE NAVIGATION
+    // ============================================
+
     document.querySelectorAll('[data-agent]').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
@@ -91,10 +336,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 el.closest('li').classList.remove('active');
             });
             this.closest('li').classList.add('active');
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                if (hamburgerBtn) {
+                    const icon = hamburgerBtn.querySelector('i');
+                    if (icon) icon.className = 'fas fa-bars';
+                }
+            }
         });
     });
 
-    // Page navigation
     document.querySelectorAll('[data-page]').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
@@ -120,38 +372,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 'optimize': '🚀 Need to optimize a query? Paste it here and I\'ll help you optimize it!'
             };
             
-            if (!isLoggedIn && pageName !== 'dashboard') {
+            if (!isAuthenticated && pageName !== 'dashboard') {
                 addMessage('ai', `${pageMessages[pageName]} <br><br>💡 <strong>Tip:</strong> <a href="/register" style="color: var(--accent);">Create an account</a> to save your queries and access history!`);
             } else {
                 addMessage('ai', pageMessages[pageName] || 'Welcome!');
             }
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                if (hamburgerBtn) {
+                    const icon = hamburgerBtn.querySelector('i');
+                    if (icon) icon.className = 'fas fa-bars';
+                }
+            }
         });
     });
 
-    // Auto-resize textarea
-    queryInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-    });
+    // ============================================
+    // CHAT FUNCTIONALITY
+    // ============================================
 
-    // Send message on Ctrl+Enter
-    queryInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+    if (queryInput) {
+        queryInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
 
-    // Send message on button click
-    sendBtn.addEventListener('click', sendMessage);
+        queryInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
 
-    // Clear chat
-    clearBtn.addEventListener('click', function() {
-        if (confirm('Clear all messages?')) {
-            chatMessages.innerHTML = '';
-            addWelcomeMessage();
-        }
-    });
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendMessage);
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Clear all messages?')) {
+                chatMessages.innerHTML = '';
+                // Re-add welcome message
+                if (isAuthenticated && currentUser) {
+                    welcomeMessage.innerHTML = `
+                        <p>👋 Welcome back, <strong>${currentUser.username}</strong>! I'm your AI assistant for query optimization.</p>
+                        <p>Describe your data needs in natural language, and I'll generate optimized SQL queries with explanations.</p>
+                        <p><strong>Example:</strong> "Show me all customers who made purchases over $100 in the last month"</p>
+                    `;
+                }
+            }
+        });
+    }
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
 
     function getAgentInfo(agentName) {
         const agentInfo = {
@@ -221,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p><strong>What it does:</strong></p>
                 <ul>
                     <li>Detects SQL injection attempts</li>
-                    <li>Blocks destructive operations (DROP, TRUNCATE)</li>
+                    <li>Blocks destructive operations (DROP, DELETE, TRUNCATE)</li>
                     <li>Validates user input</li>
                     <li>Sanitizes queries</li>
                 </ul>
@@ -229,37 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `
         };
         return agentInfo[agentName] || `<h3>🤖 Agent</h3><p>This agent helps with your queries.</p>`;
-    }
-
-    function addWelcomeMessage() {
-        const isGuest = !isLoggedIn;
-        const guestHTML = isGuest ? `
-            <div class="guest-note">
-                <i class="fas fa-info-circle"></i>
-                <span>You're using GenialQuery as a guest. <a href="/register">Sign up</a> to save your queries and access history!</span>
-            </div>
-        ` : '';
-
-        const welcomeHTML = `
-            <div class="message ai-message">
-                <div class="message-avatar">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <div class="message-content">
-                    <div class="message-header">
-                        <span class="message-sender">GenialQuery AI</span>
-                        <span class="message-time">Just now</span>
-                    </div>
-                    <div class="message-text">
-                        <p>👋 Welcome to GenialQuery! I'm your AI assistant for query optimization.</p>
-                        <p>Describe your data needs in natural language, and I'll generate optimized SQL queries with explanations.</p>
-                        <p><strong>Example:</strong> "Show me all customers who made purchases over $100 in the last month"</p>
-                        ${guestHTML}
-                    </div>
-                </div>
-            </div>
-        `;
-        chatMessages.innerHTML = welcomeHTML;
     }
 
     function addMessage(type, content) {
@@ -346,24 +592,36 @@ document.addEventListener('DOMContentLoaded', function() {
         const typingId = addTypingIndicator();
 
         try {
+            const token = localStorage.getItem('access_token');
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch('/api/query', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify({ 
                     query: text,
-                    guest: !isLoggedIn
+                    guest: !isAuthenticated
                 })
             });
 
             removeTypingIndicator(typingId);
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
+
+            if (data.success === false) {
+                addMessage('ai', `❌ ${data.error || data.message || 'An error occurred'}`);
+                return;
+            }
 
             addMessage('ai', data.response || data.query || 'No response generated.');
 
@@ -371,14 +629,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 addSQLMessage(data.sql, data.explanation);
             }
 
-            if (!isLoggedIn && chatMessages.children.length > 4) {
+            if (!isAuthenticated && chatMessages.children.length > 4) {
                 showGuestPrompt();
             }
 
         } catch (error) {
             removeTypingIndicator(typingId);
             console.error('Error:', error);
-            addMessage('ai', '❌ Sorry, I encountered an error. Please try again.');
+            addMessage('ai', `❌ Sorry, I encountered an error: ${error.message}`);
         } finally {
             sendBtn.disabled = false;
             queryInput.focus();
@@ -454,7 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.copyToClipboard = function(text) {
         if (!text) {
             const btn = event.target.closest('.copy-btn');
-            const sqlCode = btn.closest('.message-content').querySelector('.sql-code code');
+            const sqlCode = btn ? btn.closest('.message-content').querySelector('.sql-code code') : null;
             if (sqlCode) {
                 text = sqlCode.textContent;
             }
@@ -619,121 +877,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return { columns: columns, data: data, rowCount: data.length };
     }
 
-    // Add CSS for query results
-    const style = document.createElement('style');
-    style.textContent = `
-        .query-results {
-            margin-top: 12px;
-            padding: 12px;
-            background: var(--bg-primary);
-            border-radius: 8px;
-            border-left: 3px solid #10b981;
-        }
-        .query-results table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        .query-results th {
-            background: var(--accent);
-            color: white;
-            padding: 6px 12px;
-            text-align: left;
-            border: 1px solid var(--border-color);
-        }
-        .query-results td {
-            padding: 6px 12px;
-            border: 1px solid var(--border-color);
-        }
-        .query-results tr:nth-child(even) {
-            background: var(--bg-secondary);
-        }
-        .query-results tr:hover {
-            background: var(--bg-message-ai);
-        }
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 4px 0;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: var(--text-secondary);
-            border-radius: 50%;
-            animation: typing 1.4s infinite;
-        }
-        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-10px); opacity: 1; }
-        }
-        .copy-btn {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-        .copy-btn:hover {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-        .run-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.3s ease;
-        }
-        .run-btn:hover {
-            opacity: 0.8;
-            transform: translateY(-1px);
-        }
-        .run-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .sql-keyword {
-            color: #6C63FF;
-            font-weight: 600;
-        }
-        .sql-code {
-            background: var(--bg-primary);
-            padding: 12px;
-            border-radius: 6px;
-            overflow-x: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            border-left: 3px solid var(--accent);
-        }
-        .guest-signup-prompt { max-width: 70%; margin: 0 auto; }
-        .sidebar.collapsed { width: 60px; min-width: 60px; }
-        .sidebar.collapsed .logo span,
-        .sidebar.collapsed .nav-section h4,
-        .sidebar.collapsed .nav-section ul li a span,
-        .sidebar.collapsed .theme-toggle span,
-        .sidebar.collapsed .guest-banner { display: none; }
-        .sidebar.collapsed .nav-section ul li a { justify-content: center; padding: 12px; }
-        .sidebar.collapsed .nav-section ul li a i { margin: 0; font-size: 18px; }
-        .sidebar.collapsed .logo { justify-content: center; }
-        .sidebar.collapsed .sidebar-toggle { display: none; }
-        @media (max-width: 768px) {
-            .guest-signup-prompt { max-width: 95%; }
-            .sidebar.collapsed { width: 0; padding: 0; }
-        }
-    `;
-    document.head.appendChild(style);
+    // ============================================
+    // INITIALIZE
+    // ============================================
 
-    addWelcomeMessage();
+    // Check authentication on load
+    checkAuth();
+
+    // Expose logoutUser globally
+    window.logoutUser = logoutUser;
+
     console.log('💡 GenialQuery loaded! Press Ctrl+Enter to send messages.');
 });

@@ -77,21 +77,6 @@
                     Create Account
                 </button>
 
-                <div class="auth-divider">
-                    <span>or continue with</span>
-                </div>
-
-                <div class="social-login">
-                    <button type="button" class="social-btn google">
-                        <i class="fab fa-google"></i>
-                        Google
-                    </button>
-                    <button type="button" class="social-btn github">
-                        <i class="fab fa-github"></i>
-                        GitHub
-                    </button>
-                </div>
-
                 <p class="auth-footer">
                     Already have an account? <a href="{{ url_for('pages.login_page') }}">Sign in</a>
                 </p>
@@ -173,13 +158,21 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({ username, email, password })
                 });
 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Account created successfully! Please login.');
-                    window.location.href = '/login';
+                    // Auto-login after registration
+                    if (data.access_token) {
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('username', data.user.username);
+                        window.location.href = '/dashboard';
+                    } else {
+                        alert('Account created successfully! Please login.');
+                        window.location.href = '/login';
+                    }
                 } else {
                     alert('Registration failed: ' + (data.error || 'Please try again'));
                 }

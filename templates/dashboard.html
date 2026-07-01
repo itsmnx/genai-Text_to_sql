@@ -9,7 +9,9 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+        <!-- ============================================ -->
+        <!-- SIDEBAR                                       -->
+        <!-- ============================================ -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -99,22 +101,22 @@
                         <i class="fas fa-moon" id="themeIcon"></i>
                         <span id="themeText">Dark Mode</span>
                     </button>
-                    {% if not session.get('user_id') %}
-                    <div class="guest-banner">
-                        <i class="fas fa-user-astronaut"></i>
-                        <span>Guest Mode</span>
-                        <small>Sign up to save queries</small>
-                    </div>
-                    {% endif %}
+                    <!-- Sidebar Profile Section (dynamically populated) -->
+                    <div id="sidebarProfile"></div>
                 </div>
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- ============================================ -->
+        <!-- MAIN CONTENT                                 -->
+        <!-- ============================================ -->
         <main class="main-content">
-            <!-- Top Header -->
+            <!-- TOP HEADER -->
             <header class="top-header">
                 <div class="header-left">
+                    <button class="hamburger-btn" id="hamburgerBtn">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <h1 id="pageTitle">Dashboard</h1>
                     <span class="badge" id="agentStatus">🟢 All Agents Active</span>
                 </div>
@@ -123,36 +125,12 @@
                         <i class="fas fa-bell"></i>
                         <span class="notification-dot"></span>
                     </button>
-                    
-                    {% if session.get('user_id') %}
-                    <!-- Logged in user profile -->
-                    <div class="profile-dropdown">
-                        <button class="profile-btn" id="profileBtn">
-                            <img src="https://ui-avatars.com/api/?name={{ session.get('username', 'User') }}&background=6C63FF&color=fff&size=32" alt="Profile">
-                            <span class="profile-name">{{ session.get('username', 'User') }}</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu" id="dropdownMenu">
-                            <a href="#"><i class="fas fa-user"></i> Profile</a>
-                            <a href="#"><i class="fas fa-cog"></i> Settings</a>
-                            <a href="#"><i class="fas fa-key"></i> API Keys</a>
-                            <hr>
-                            <a href="{{ url_for('pages.logout') }}" class="logout-btn">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </div>
-                    </div>
-                    {% else %}
-                    <!-- Guest user actions -->
-                    <div class="auth-buttons">
-                        <a href="{{ url_for('pages.login_page') }}" class="btn-outline">Login</a>
-                        <a href="{{ url_for('pages.register_page') }}" class="btn-primary">Sign Up Free</a>
-                    </div>
-                    {% endif %}
+                    <!-- Auth Section (dynamically populated) -->
+                    <div id="authSection"></div>
                 </div>
             </header>
 
-            <!-- Chat Interface -->
+            <!-- CHAT INTERFACE -->
             <div class="chat-container">
                 <div class="chat-messages" id="chatMessages">
                     <!-- Welcome Message -->
@@ -165,16 +143,14 @@
                                 <span class="message-sender">GenialQuery AI</span>
                                 <span class="message-time">Just now</span>
                             </div>
-                            <div class="message-text">
+                            <div class="message-text" id="welcomeMessage">
                                 <p>👋 Welcome to GenialQuery! I'm your AI assistant for query optimization.</p>
                                 <p>Describe your data needs in natural language, and I'll generate optimized SQL queries with explanations.</p>
                                 <p><strong>Example:</strong> "Show me all customers who made purchases over $100 in the last month"</p>
-                                {% if not session.get('user_id') %}
-                                <div class="guest-note">
+                                <div class="guest-note" id="guestNote">
                                     <i class="fas fa-info-circle"></i>
-                                    <span>You're using GenialQuery as a guest. <a href="{{ url_for('pages.register_page') }}">Sign up</a> to save your queries and access history!</span>
+                                    <span>You're using GenialQuery as a guest. <a href="/register">Sign up</a> to save your queries and access history!</span>
                                 </div>
-                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -208,14 +184,45 @@
                         <span class="model-status">
                             <i class="fas fa-circle" style="color: #10b981; font-size: 8px;"></i>
                             Model: Optimized Query Generator
-                            {% if not session.get('user_id') %}
-                            <span class="guest-badge">Guest</span>
-                            {% endif %}
+                            <span class="guest-badge" id="guestBadge">Guest</span>
                         </span>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PROFILE MODAL                                 -->
+    <!-- ============================================ -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit"></i> Edit Profile</h2>
+                <button class="modal-close" onclick="closeProfileModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="modalUsername">Username</label>
+                        <input type="text" id="modalUsername" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalEmail">Email</label>
+                        <input type="email" id="modalEmail" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="modalFullName">Full Name</label>
+                        <input type="text" id="modalFullName" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="modalBio">Bio</label>
+                        <textarea id="modalBio" rows="3" placeholder="Tell us about yourself"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

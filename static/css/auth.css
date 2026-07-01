@@ -229,69 +229,11 @@ body {
     transform: translateY(0);
 }
 
-.auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    color: var(--text-secondary);
-    font-size: 13px;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border-color);
-}
-
-.social-login {
-    display: flex;
-    gap: 12px;
-}
-
-.social-btn {
-    flex: 1;
-    padding: 12px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    background: transparent;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.social-btn:hover {
-    border-color: var(--accent);
-    background: var(--bg-primary);
-    transform: translateY(-2px);
-}
-
-.social-btn.google:hover {
-    border-color: #ea4335;
-    color: #ea4335;
-}
-
-.social-btn.github:hover {
-    border-color: #333;
-    color: #333;
-}
-
-[data-theme="dark"] .social-btn.github:hover {
-    border-color: #fff;
-    color: #fff;
-}
-
 .auth-footer {
     text-align: center;
     color: var(--text-secondary);
     font-size: 14px;
+    margin-top: 8px;
 }
 
 .auth-footer a {
@@ -366,10 +308,6 @@ body {
     .feature {
         flex: 1;
         min-width: 140px;
-    }
-
-    .social-login {
-        flex-direction: column;
     }
 }
 
