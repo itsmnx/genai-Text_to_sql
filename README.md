@@ -1,4 +1,4 @@
-# GenialQuery - AI-Powered Text-to-SQL
+# GeniaiQuery - AI-Powered Text-to-SQL
 
 **Convert natural language to optimized SQL queries using NLP + Machine Learning + Groq AI**
 
